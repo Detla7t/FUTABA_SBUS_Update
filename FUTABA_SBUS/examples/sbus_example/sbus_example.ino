@@ -3,7 +3,7 @@
 #include <Streaming.h> //not sure if this is needed dont have an easy way to check i would recommend trying to remove this line and see if you have issues or not
 
 
-FUTABA_SBUS sBus(Serial1);
+SBUS_Receiver sBus(Serial1);
 sBus.error_check_interval = 100; //default
 sBus.amount_of_allowable_errors = 500; //default
 sBus.enable_error_checking = true; //this is on by default
@@ -22,7 +22,7 @@ void loop(){
   }
 }
 
-Generic_Wait(int number,int number_limit) {
+int Generic_Wait(int number,int number_limit) {
     if (number >= number_limit) {
         number = 0;
     }
