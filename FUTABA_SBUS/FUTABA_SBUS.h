@@ -27,7 +27,7 @@ class SBUS_Receiver
 		uint8_t  failsafe_status;
 		int sbus_passthrough;
 		int toChannels;
-		void begin(void);
+		SBUS_Receiver(HardwareSerial& bus);
 		int16_t Channel(uint8_t ch);
 		uint8_t DigiChannel(uint8_t ch);
 		void Servo(uint8_t ch, int16_t position);
@@ -36,7 +36,7 @@ class SBUS_Receiver
 		void PassthroughSet(int mode);
 		int PassthroughRet(void);
 		void UpdateServos(void);
-		void UpdateChannels(void);
+		int16_t* UpdateChannels(void);
 		void FeedLine(void);
 		void Signal_Error();
 		void ReadDevice(void); //this simplifys the usage by only needing to call this one function to actually read the sbus device
