@@ -1,14 +1,8 @@
 #include "FUTABA_SBUS.h"
 
-void FUTABA_SBUS::begin(){
-	uint8_t loc_sbusData[25] = {
-	  0x0f,0x01,0x04,0x20,0x00,0xff,0x07,0x40,0x00,0x02,0x10,0x80,0x2c,0x64,0x21,0x0b,0x59,0x08,0x40,0x00,0x02,0x10,0x80,0x00,0x00};
-	int16_t loc_channels[18]  = {
-	  		1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,0,0};
-	int16_t loc_servos[18]    = {
-  			1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,0,0};
-  	port.begin(BAUDRATE);
-
+void FUTABA_SBUS::begin(HardwareSerial& bus){
+	port = &bus; //gets the current address of the serial port you want to use
+  	port->begin(BAUDRATE); //starts the listener on the port you provieded
 	memcpy(sbusData,loc_sbusData,25);
 	memcpy(channels,loc_channels,18);
 	memcpy(servos,loc_servos,18);
@@ -20,16 +14,17 @@ void FUTABA_SBUS::begin(){
 }
 
 int16_t FUTABA_SBUS::Channel(uint8_t ch) {
-  // Read channel data
+  // Read channel data and if its out of range return 0
   if ((ch>0)&&(ch<=16)){
-    return channels[ch-1];
+  	return channels[ch-1];
   }
   else{
-    return 1023;
+  	return 0;
   }
 }
+
 uint8_t FUTABA_SBUS::DigiChannel(uint8_t ch) {
-  // Read digital channel data
+  // Read channel data and if its out of range return 0
   if ((ch>0) && (ch<=2)) {
     return channels[15+ch];
   }
@@ -128,80 +123,112 @@ void FUTABA_SBUS::UpdateServos(void) {
     port.write(sbusData[i]);
   }
 }
+
 void FUTABA_SBUS::UpdateChannels(void) {
-  //uint8_t i;
-  //uint8_t sbus_pointer = 0;
-  // clear channels[]
-  /*for (i=0; i<16; i++) {
-    channels[i] = 0;
-  }
+	//uint8_t i;
+	//uint8_t sbus_pointer = 0;
+	// clear channels[]
+	/*for (i=0; i<16; i++) {
+	channels[i] = 0;
+	}
 
-  // reset counters
-  byte_in_sbus = 1;
-  bit_in_sbus = 0;
-  ch = 0;
-  bit_in_channel = 0;
-  //this method is much slower than the other method
-  // process actual sbus data
-  for (i=0; i<176; i++) {
-    if (sbusData[byte_in_sbus] & (1<<bit_in_sbus)) {
-      channels[ch] |= (1<<bit_in_channel);
-    }
-    bit_in_sbus++;
-    bit_in_channel++;
+	// reset counters
+	byte_in_sbus = 1;
+	bit_in_sbus = 0;
+	ch = 0;
+	bit_in_channel = 0;
+	//this method is much slower than the other method
+	// process actual sbus data
+	for (i=0; i<176; i++) {
+	if (sbusData[byte_in_sbus] & (1<<bit_in_sbus)) {
+	channels[ch] |= (1<<bit_in_channel);
+	}
+	bit_in_sbus++;
+	bit_in_channel++;
 
-    if (bit_in_sbus == 8) {
-      bit_in_sbus =0;
-      byte_in_sbus++;
-    }
-    if (bit_in_channel == 11) {
-      bit_in_channel =0;
-      ch++;
-    }
-  }*/
-
-  channels[0]  = ((sbusData[1]|sbusData[2]<< 8) & 0x07FF);
-  channels[1]  = ((sbusData[2]>>3|sbusData[3]<<5) & 0x07FF);
-  channels[2]  = ((sbusData[3]>>6|sbusData[4]<<2|sbusData[5]<<10) & 0x07FF);
-  channels[3]  = ((sbusData[5]>>1|sbusData[6]<<7) & 0x07FF);
-  channels[4]  = ((sbusData[6]>>4|sbusData[7]<<4) & 0x07FF);
-  channels[5]  = ((sbusData[7]>>7|sbusData[8]<<1|sbusData[9]<<9) & 0x07FF);
-  channels[6]  = ((sbusData[9]>>2|sbusData[10]<<6) & 0x07FF);
-  channels[7]  = ((sbusData[10]>>5|sbusData[11]<<3) & 0x07FF); // & the other 8 + 2 channels if you need them
-  #ifdef ALL_CHANNELS
-  channels[8]  = ((sbusData[12]|sbusData[13]<< 8) & 0x07FF);
-  channels[9]  = ((sbusData[13]>>3|sbusData[14]<<5) & 0x07FF);
-  channels[10] = ((sbusData[14]>>6|sbusData[15]<<2|sbusData[16]<<10) & 0x07FF);
-  channels[11] = ((sbusData[16]>>1|sbusData[17]<<7) & 0x07FF);
-  channels[12] = ((sbusData[17]>>4|sbusData[18]<<4) & 0x07FF);
-  channels[13] = ((sbusData[18]>>7|sbusData[19]<<1|sbusData[20]<<9) & 0x07FF);
-  channels[14] = ((sbusData[20]>>2|sbusData[21]<<6) & 0x07FF);
-    channels[15] = ((sbusData[21]>>5|sbusData[22]<<3) & 0x07FF);
-  #endif
-  // DigiChannel 1
-  /*if (sbusData[23] & (1<<0)) {
-    channels[16] = 1;
-  }
-  else{
-    channels[16] = 0;
-  }
-  // DigiChannel 2
-  if (sbusData[23] & (1<<1)) {
-    channels[17] = 1;
-  }
-  else{
-    channels[17] = 0;
-  }*/
-  // Failsafe
-  failsafe_status = SBUS_SIGNAL_OK;
-  if (sbusData[23] & (1<<2)) {
-    failsafe_status = SBUS_SIGNAL_LOST;
-  }
-  if (sbusData[23] & (1<<3)) {
-    failsafe_status = SBUS_SIGNAL_FAILSAFE;
-  }
-
+	if (bit_in_sbus == 8) {
+	bit_in_sbus =0;
+	byte_in_sbus++;
+	}
+	if (bit_in_channel == 11) {
+	bit_in_channel =0;
+	ch++;
+	}
+	}*/
+	newdata_check = sbusData[20];
+	if (Channel_Error_cycle <= error_check_interval && enable_error_checking) {
+		newdata_check = old_data;
+	}
+	channels[0]  = ((sbusData[1]|sbusData[2]<< 8) & 0x07FF);
+	channels[1]  = ((sbusData[2]>>3|sbusData[3]<<5) & 0x07FF);
+	channels[2]  = ((sbusData[3]>>6|sbusData[4]<<2|sbusData[5]<<10) & 0x07FF);
+	channels[3]  = ((sbusData[5]>>1|sbusData[6]<<7) & 0x07FF);
+	channels[4]  = ((sbusData[6]>>4|sbusData[7]<<4) & 0x07FF);
+	channels[5]  = ((sbusData[7]>>7|sbusData[8]<<1|sbusData[9]<<9) & 0x07FF);
+	channels[6]  = ((sbusData[9]>>2|sbusData[10]<<6) & 0x07FF);
+	channels[7]  = ((sbusData[10]>>5|sbusData[11]<<3) & 0x07FF); // & the other 8 + 2 channels if you need them
+	channels[8]  = ((sbusData[12]|sbusData[13]<< 8) & 0x07FF);
+	channels[9]  = ((sbusData[13]>>3|sbusData[14]<<5) & 0x07FF);
+	channels[10] = ((sbusData[14]>>6|sbusData[15]<<2|sbusData[16]<<10) & 0x07FF);
+	channels[11] = ((sbusData[16]>>1|sbusData[17]<<7) & 0x07FF);
+	channels[12] = ((sbusData[17]>>4|sbusData[18]<<4) & 0x07FF);
+		channels[13] = ((sbusData[18]>>7|sbusData[19]<<1|newdata_check<<9) & 0x07FF);
+	channels[14] = ((newdata_check>>2|sbusData[21]<<6) & 0x07FF);
+	channels[15] = ((sbusData[21]>>5|sbusData[22]<<3) & 0x07FF);
+		//technically this is channel 13 but with an added studder to check for if the data is new or not
+		channels[16] = ((sbusData[18]>>7|sbusData[19]<<1|sbusData[20]<<9) & 0x07FF);
+	// DigiChannel 1
+	/*if (sbusData[23] & (1<<0)) {
+	channels[16] = 1;
+	}
+	else{
+	channels[16] = 0;
+	}
+	// DigiChannel 2
+	if (sbusData[23] & (1<<1)) {
+	channels[17] = 1;
+	}
+	else{
+	channels[17] = 0;
+	}*/
+	// Failsafe
+	failsafe_status = SBUS_SIGNAL_OK;
+	if (sbusData[23] & (1<<2)) {
+		failsafe_status = SBUS_SIGNAL_LOST;
+	}
+	if (sbusData[23] & (1<<3)) {
+		failsafe_status = SBUS_SIGNAL_FAILSAFE;
+	}
+	//checks if channel 16 is out of range and if so sets all channels to zero
+	if (!enable_error_checking) {
+		return channels;
+	}
+	//if channel 16 is operating normally reset a
+	if (channels[16] >= 950) {
+	    Channel_update_fail_count = 0;
+	}
+	//checks if channel 16 which is are error check channel is within normal range and if not and the update fail count goes above the amount_of_allowable_errors then it sets all channels to 0
+	if (channels[16] <= 950 && Channel_update_fail_count >= amount_of_allowable_errors) {
+	    Channel_update_fail_count = amount_of_allowable_errors;
+	    Signal_Error();
+	    Channel_update_fail_count++;
+	} 
+	//This copies the data in sbusData[20] copies it to old data corrupts sbusData by setting it to hex 0 and resets the counter
+	if(Channel_Error_cycle >= error_check_interval) {
+		old_data = sbusData[20];
+		sbusData[20] = 0x00;
+		Channel_Error_cycle = 0;
+	} 
+	Channel_Error_cycle++;
+	return channels;
 }
+
+void FUTABA_SBUS::Signal_Error() {
+	for (int16_t i = 0; i <= 15; i++) {
+		channels[i] = 0;
+	}
+}
+
 void FUTABA_SBUS::FeedLine(void){
   if (port.available() > 24){
     while(port.available() > 0){
