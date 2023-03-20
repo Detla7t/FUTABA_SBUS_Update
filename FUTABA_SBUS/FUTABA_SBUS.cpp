@@ -1,6 +1,6 @@
 #include "FUTABA_SBUS.h"
 
-void FUTABA_SBUS::begin(HardwareSerial& bus){
+SBUS_Receiver::SBUS_Receiver(HardwareSerial& bus){
 	port = &bus; //gets the current address of the serial port you want to use
   	port->begin(BAUDRATE); //starts the listener on the port you provieded
 	memcpy(sbusData,loc_sbusData,25);
@@ -13,7 +13,7 @@ void FUTABA_SBUS::begin(HardwareSerial& bus){
 	feedState = 0;
 }
 
-int16_t FUTABA_SBUS::Channel(uint8_t ch) {
+int16_t SBUS_Receiver::Channel(uint8_t ch) {
   // Read channel data and if its out of range return 0
   if ((ch>0)&&(ch<=16)){
   	return channels[ch-1];
@@ -23,7 +23,7 @@ int16_t FUTABA_SBUS::Channel(uint8_t ch) {
   }
 }
 
-uint8_t FUTABA_SBUS::DigiChannel(uint8_t ch) {
+uint8_t SBUS_Receiver::DigiChannel(uint8_t ch) {
   // Read channel data and if its out of range return 0
   if ((ch>0) && (ch<=2)) {
     return channels[15+ch];
@@ -32,7 +32,7 @@ uint8_t FUTABA_SBUS::DigiChannel(uint8_t ch) {
     return 0;
   }
 }
-void FUTABA_SBUS::Servo(uint8_t ch, int16_t position) {
+void SBUS_Receiver::Servo(uint8_t ch, int16_t position) {
   // Set servo position
   if ((ch>0)&&(ch<=16)) {
     if (position>2048) {
@@ -41,7 +41,7 @@ void FUTABA_SBUS::Servo(uint8_t ch, int16_t position) {
     servos[ch-1] = position;
   }
 }
-void FUTABA_SBUS::DigiServo(uint8_t ch, uint8_t position) {
+void SBUS_Receiver::DigiServo(uint8_t ch, uint8_t position) {
   // Set digital servo position
   if ((ch>0) && (ch<=2)) {
     if (position>1) {
@@ -50,20 +50,20 @@ void FUTABA_SBUS::DigiServo(uint8_t ch, uint8_t position) {
     servos[15+ch] = position;
   }
 }
-uint8_t FUTABA_SBUS::Failsafe(void) {
+uint8_t SBUS_Receiver::Failsafe(void) {
   return failsafe_status;
 }
 
-void FUTABA_SBUS::PassthroughSet(int mode) {
+void SBUS_Receiver::PassthroughSet(int mode) {
   // Set passtrough mode, if true, received channel data is send to servos
   sbus_passthrough = mode;
 }
 
-int FUTABA_SBUS::PassthroughRet(void) {
+int SBUS_Receiver::PassthroughRet(void) {
   // Return current passthrough mode
   return sbus_passthrough;
 }
-void FUTABA_SBUS::UpdateServos(void) {
+void SBUS_Receiver::UpdateServos(void) {
   // Send data to servos
   // Passtrough mode = false >> send own servo data
   // Passtrough mode = true >> send received channel data
@@ -120,11 +120,11 @@ void FUTABA_SBUS::UpdateServos(void) {
   // send data out
   //serialPort.write(sbusData,25);
   for (i=0;i<25;i++) {
-    port.write(sbusData[i]);
+    port->write(sbusData[i]);
   }
 }
 
-void FUTABA_SBUS::UpdateChannels(void) {
+int16_t* SBUS_Receiver::UpdateChannels(void) {
 	//uint8_t i;
 	//uint8_t sbus_pointer = 0;
 	// clear channels[]
@@ -223,26 +223,26 @@ void FUTABA_SBUS::UpdateChannels(void) {
 	return channels;
 }
 
-void SBUS::ReadDevice(void) {
+void SBUS_Receiver::ReadDevice(void) {
     FeedLine();
     UpdateChannels();
 }
 
-void FUTABA_SBUS::Signal_Error() {
+void SBUS_Receiver::Signal_Error() {
 	for (int16_t i = 0; i <= 15; i++) {
 		channels[i] = 0;
 	}
 }
 
-void FUTABA_SBUS::FeedLine(void){
-  if (port.available() > 24){
-    while(port.available() > 0){
-      inData = port.read();
+void SBUS_Receiver::FeedLine(void){
+  if (port->available() > 24){
+    while(port->available() > 0){
+      inData = port->read();
       switch (feedState){
       case 0:
         if (inData != 0x0f){
-          while(port.available() > 0){//read the contents of in buffer this should resync the transmission
-            inData = port.read();
+          while(port->available() > 0){//read the contents of in buffer this should resync the transmission
+            inData = port->read();
           }
           return;
         }
@@ -256,7 +256,7 @@ void FUTABA_SBUS::FeedLine(void){
       case 1:
         bufferIndex ++;
         inBuffer[bufferIndex] = inData;
-        if (bufferIndex < 24 && port.available() == 0){
+        if (bufferIndex < 24 && port->available() == 0){
           feedState = 0;
         }
         if (bufferIndex == 24){
