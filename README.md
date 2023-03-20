@@ -1,5 +1,5 @@
 # FUTABA_SBUS_Update
-Note ived tested this and i was able to build using platform.io to atleast build a working biniary so in theory it should work for arduino if you Throw the "FUTABA_SBUS" folder inside of your library folder in arduino or put the folder inside of the src folder inside your platform.io folder and then import it `#include "FUTABA_SBUS/FUTABA_SBUS.h"` like so hope this helps someone
+Note ived tested this and i was able to build using platform.io to atleast build a working biniary so in theory it should work for arduino if you Throw the "FUTABA_SBUS" folder inside of your library folder in arduino or put the folder inside of the src folder inside your platform.io folder and then import it `#include "FUTABA_SBUS/FUTABA_SBUS.h"` hope this helps someone personally ive previously used this for RC cars and quadcopters to get controller input to a teensy 4.1
 
 SBUS driver for arduino Based on Futaba_sbus library but with some better creature comforts and useability improvements
 
