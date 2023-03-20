@@ -4,6 +4,9 @@
 
 
 FUTABA_SBUS sBus(Serial1);
+sBus.error_check_interval = 100; //default
+sBus.amount_of_allowable_errors = 500; //default
+sBus.enable_error_checking = true; //this is on by default
 int16_t* CH = sBus.UpdateChannels(); //allows you to easily parse the Channels by doing CH[Channel number] to get the value of any specific channel 
 How_many_cycles_before_you_update_the_receiver_values = 3500 //adjust how fast it updates the values received NOTE IF YOU HAVE ISSUES WITH NO VALUES INCREASE THIS OTHERWISE IF YOU HAVE ISSUES WITH VALUES BEING STUCK TRY DECREASING THIS VALUE
 How_many_cycles_before_checking_the_receiver_after_an_error = How_many_cycles_before_you_update_the_receiver_values * 10 //
