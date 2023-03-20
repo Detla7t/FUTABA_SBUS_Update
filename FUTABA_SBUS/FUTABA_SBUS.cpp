@@ -223,6 +223,11 @@ void FUTABA_SBUS::UpdateChannels(void) {
 	return channels;
 }
 
+void SBUS::ReadDevice(void) {
+    FeedLine();
+    UpdateChannels();
+}
+
 void FUTABA_SBUS::Signal_Error() {
 	for (int16_t i = 0; i <= 15; i++) {
 		channels[i] = 0;
